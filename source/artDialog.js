@@ -1,6 +1,6 @@
 /*!
 * artDialog 5.0.4
-* Date: 2013-07-31
+* Date: 2013-02-24
 * https://github.com/aui/artDialog
 * (c) 2009-2013 TangBin, http://www.planeArt.cn
 *
@@ -572,24 +572,15 @@ if (document.compatMode === 'BackCompat') {
     throw new Error('artDialog: Document types require more than xhtml1.0');
 };
 
-
-
 var _singleton,
     _count = 0,
+    _activeElement = document.activeElement,
     _root = $(document.getElementsByTagName('html')[0]),
     _expando = 'artDialog' + (+ new Date),
     _isIE6 = window.VBArray && !window.XMLHttpRequest,
     _isMobile = 'createTouch' in document && !('onmousemove' in document)
         || /(iPhone|iPad|iPod)/i.test(navigator.userAgent),
-    _isFixed = !_isIE6 && !_isMobile,
-    _getActive = function () {
-        try {
-            // bug: ie8~9, iframe #26
-            return document.activeElement;
-        } catch (e) {
-        }
-    },
-    _activeElement = _getActive();
+    _isFixed = !_isIE6 && !_isMobile;
 
     
 var artDialog = function (config, ok, cancel) {
@@ -1124,12 +1115,11 @@ artDialog.fn = artDialog.prototype = {
 
         var that = this,
             isFocus = function () {
-                var activeElement = _getActive();
-                return activeElement && that.dom.wrap[0].contains(activeElement);
+                return that.dom.wrap[0].contains(document.activeElement);
             };
 
         if (!isFocus()) {
-            _activeElement = _getActive();
+            _activeElement = document.activeElement;
         }
 
         setTimeout(function () {
@@ -1437,7 +1427,7 @@ artDialog._templates =
 +								'<td class="d-header">'
 +									'<div class="d-titleBar">'
 +										'<div id="d-title-{id}" class="d-title"></div>'
-+										'<a class="d-close" href="javascript:;" title="{cancelValue}">×</a>'
++										'<a class="d-close" href="javascript:;">×</a>'
 +									'</div>'
 +								'</td>'
 +							'</tr>'

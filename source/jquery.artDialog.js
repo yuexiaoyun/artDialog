@@ -1,12 +1,13 @@
 /*!
-* artDialog 5.0.4
-* Date: 2013-07-31
+* artDialog 5.0.3
+* Date: 2013-02-20
 * https://github.com/aui/artDialog
 * (c) 2009-2013 TangBin, http://www.planeArt.cn
 *
 * This is licensed under the GNU LGPL, version 2.1 or later.
 * For details, see: http://creativecommons.org/licenses/LGPL/2.1/
 */
+
 
 ;(function ($, window, undefined) {
 
@@ -15,24 +16,15 @@ if (document.compatMode === 'BackCompat') {
     throw new Error('artDialog: Document types require more than xhtml1.0');
 };
 
-
-
 var _singleton,
     _count = 0,
+    _activeElement = document.activeElement,
     _root = $(document.getElementsByTagName('html')[0]),
     _expando = 'artDialog' + (+ new Date),
     _isIE6 = window.VBArray && !window.XMLHttpRequest,
     _isMobile = 'createTouch' in document && !('onmousemove' in document)
         || /(iPhone|iPad|iPod)/i.test(navigator.userAgent),
-    _isFixed = !_isIE6 && !_isMobile,
-    _getActive = function () {
-        try {
-            // bug: ie8~9, iframe #26
-            return document.activeElement;
-        } catch (e) {
-        }
-    },
-    _activeElement = _getActive();
+    _isFixed = !_isIE6 && !_isMobile;
 
     
 var artDialog = function (config, ok, cancel) {
@@ -67,6 +59,7 @@ var artDialog = function (config, ok, cancel) {
             api.follow(elem)
         };
         api.zIndex().focus();
+        _activeElement = document.activeElement;
         return api;
     };
     
@@ -117,16 +110,18 @@ var artDialog = function (config, ok, cancel) {
     _count ++;
 
     return artDialog.list[config.id] = _singleton ?
-        _singleton._create(config) : new artDialog.fn._create(config);
+        _singleton.constructor(config) : new artDialog.fn.constructor(config);
 };
 
-artDialog.version = '5.0.4';
+artDialog.version = '5.0.3';
 
 artDialog.fn = artDialog.prototype = {
     
-
-    _create: function (config) {
+    /** @inner */
+    constructor: function (config) {
         var dom;
+
+        _activeElement = document.activeElement;
         
         this.closed = false;
         this.config = config;
@@ -565,26 +560,16 @@ artDialog.fn = artDialog.prototype = {
     /** @inner 设置焦点 */
     focus: function () {
 
-        var that = this,
-            isFocus = function () {
-                var activeElement = _getActive();
-                return activeElement && that.dom.wrap[0].contains(activeElement);
-            };
-
-        if (!isFocus()) {
-            _activeElement = _getActive();
-        }
-
-        setTimeout(function () {
-            if (!isFocus()) {
+        if (this.config.focus) {
+            //setTimeout(function () {
                 try {
-                    var elem = that._focus || that.dom.close || taht.dom.wrap;
-                    elem[0].focus();
+                    var elem = this._focus && this._focus[0] || this.dom.close[0];
+                    elem && elem.focus();
                 // IE对不可见元素设置焦点会报错
                 } catch (e) {};
-            }
-        }, 16);
-
+            //}, 0);
+        };
+        
         return this;
     },
     
@@ -776,11 +761,10 @@ artDialog.fn = artDialog.prototype = {
     
 };
 
-artDialog.fn._create.prototype = artDialog.fn;
+artDialog.fn.constructor.prototype = artDialog.fn;
 
 
 
-// 快捷方式绑定触发元素
 $.fn.dialog = $.fn.artDialog = function () {
     var config = arguments;
     this[this.live ? 'live' : 'bind']('click', function () {
@@ -820,7 +804,7 @@ $(document).bind('keydown', function (event) {
         api = artDialog.focus,
         keyCode = event.keyCode;
 
-    if (!api || rinput.test(nodeName) && target.type !== 'button') {
+    if (!api || !api.config.esc || rinput.test(nodeName) && target.type !== 'button') {
         return;
     };
     
@@ -834,17 +818,15 @@ function focusin (event) {
     var api = artDialog.focus;
     if (api && api._isLock && !api.dom.wrap[0].contains(event.target)) {
         event.stopPropagation();
-        api.dom.outer[0].focus();
+        api.focus();
     }
 }
 
 if ($.fn.live) {
     $('body').live('focus', focusin);
-} else if (document.addEventListener) {
+}/* else if (document.addEventListener) {
     document.addEventListener('focus', focusin, true);
-} else {
-    $(document).bind('focusin', focusin);
-}
+}*/
 
 
 
@@ -880,7 +862,7 @@ artDialog._templates =
 +                               '<td class="d-header">'
 +                                   '<div class="d-titleBar">'
 +                                       '<div id="d-title-{id}" class="d-title"></div>'
-+                                       '<a class="d-close" href="javascript:;" title="{cancelValue}">×</a>'
++                                       '<a class="d-close" href="javascript:;">×</a>'
 +                                   '</div>'
 +                               '</td>'
 +                           '</tr>'
@@ -955,9 +937,15 @@ artDialog.defaults = {
     // 皮肤名(多皮肤共存预留接口)
     skin: null,
     
-    // 自动关闭时间(毫秒)
+    // 自动关闭时间
     time: null,
-        
+    
+    // 是否支持Esc键关闭
+    esc: true,
+    
+    // 是否支持对话框按钮自动聚焦
+    focus: true,
+    
     // 初始化后是否显示对话框
     visible: true,
     
